@@ -23,10 +23,10 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Backend
-backend/uploads/
-backend/telemetry.db
-backend/venv/
-backend/.venv/
-backend/__pycache__/
+back_end/uploads/
+back_end/telemetry.db
+back_end/venv/
+back_end/.venv/
+back_end/__pycache__/
 **/__pycache__/
 *.pyc
