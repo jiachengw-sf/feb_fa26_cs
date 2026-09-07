@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from fastapi import UploadFile, File
+import pandas as pd
+import sqlite3
+from database import DB
 
 app = FastAPI()
 
@@ -27,4 +30,22 @@ async def upload_csv(file: UploadFile = File(...)):
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    return {"filename": file.filename, "size_bytes": len(contents)}
+    df = pd.read_csv(file_path)
+    df.rename(columns={"timestamp": "timestamp_ms", "name": "signal_name"}, inplace=True)
+
+    conn = sqlite3.connect(DB)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO runs (filename, uploaded_at) VALUES (?, datetime('now'))",
+        (file.filename,)
+    )
+    run_id = cursor.lastrowid
+
+    df["run_id"] = run_id
+    df.to_sql("signals", conn, if_exists="append", index=False)
+
+    conn.commit()
+    conn.close()
+
+    return {"filename": file.filename, "run_id": run_id, "rows_inserted": len(df)}
