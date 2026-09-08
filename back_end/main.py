@@ -49,3 +49,16 @@ async def upload_csv(file: UploadFile = File(...)):
     conn.close()
 
     return {"filename": file.filename, "run_id": run_id, "rows_inserted": len(df)}
+
+@app.get("/runs")
+def get_runs():
+    conn = sqlite3.connect(DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, filename, uploaded_at FROM runs")
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [
+        {"id": row[0], "filename": row[1], "uploaded_at": row[2]}
+        for row in rows
+    ]
