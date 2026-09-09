@@ -5,6 +5,8 @@ from fastapi import UploadFile, File
 import pandas as pd
 import sqlite3
 from database import DB
+from fastapi import Query
+from typing import Optional
 
 app = FastAPI()
 
@@ -62,3 +64,30 @@ def get_runs():
         {"id": row[0], "filename": row[1], "uploaded_at": row[2]}
         for row in rows
     ]
+
+@app.get("/runs/{run_id}/signals")
+def get_signals(run_id: int, signal_name:  Optional[str] = Query(None)):
+    conn = sqlite3.connect(DB)
+    cursor = conn.cursor()
+
+    if signal_name:
+        cursor.execute(
+            "SELECT timestamp_ms, value, physical_value FROM signals WHERE run_id = ? AND signal_name = ? ORDER BY timestamp_ms",
+            (run_id, signal_name)
+        )
+    else:
+        cursor.execute(
+            "SELECT DISTINCT signal_name FROM signals WHERE run_id = ?",
+            (run_id,)
+        )
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    if signal_name:
+        return [
+            {"timestamp_ms": row[0], "value": row[1], "physical_value": row[2]}
+            for row in rows
+        ]
+    else:
+        return {"available_signals": [row[0] for row in rows]}
