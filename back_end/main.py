@@ -91,3 +91,30 @@ def get_signals(run_id: int, signal_name:  Optional[str] = Query(None)):
         ]
     else:
         return {"available_signals": [row[0] for row in rows]}
+
+@app.get("/runs/{run_id}/signals/{signal_name}/stats")
+def get_signal_stats(run_id: int, signal_name: str):
+    conn = sqlite3.connect(DB)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT value FROM signals WHERE run_id = ? AND signal_name = ?",
+        (run_id, signal_name)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    values = [row[0] for row in rows if row[0] is not None]
+
+    if not values:
+        return {"error": "No data found for this signal"}
+
+    series = pd.Series(values)
+
+    return {
+        "signal_name": signal_name,
+        "count": len(series),
+        "min": series.min(),
+        "max": series.max(),
+        "mean": round(series.mean(), 3),
+        "std": round(series.std(), 3)
+    }
