@@ -118,3 +118,35 @@ def get_signal_stats(run_id: int, signal_name: str):
         "mean": round(series.mean(), 3),
         "std": round(series.std(), 3)
     }
+
+@app.get("/runs/{run_id}/signals/{signal_name}/anomalies")
+def get_anomalies(run_id: int, signal_name: str, threshold: float = 2.0):
+    conn = sqlite3.connect(DB)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT timestamp_ms, value FROM signals WHERE run_id = ? AND signal_name = ? ORDER BY timestamp_ms",
+        (run_id, signal_name)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    df = pd.DataFrame(rows, columns=["timestamp_ms", "value"])
+    df = df.dropna(subset=["value"])
+
+    mean = df["value"].mean()
+    std = df["value"].std()
+
+    if std == 0:
+        return {"anomalies": []}
+
+    df["z_score"] = (df["value"] - mean) / std
+    anomalies = df[df["z_score"].abs() > threshold]
+
+    return {
+        "signal_name": signal_name,
+        "mean": round(mean, 3),
+        "std": round(std, 3),
+        "threshold": threshold,
+        "anomaly_count": len(anomalies),
+        "anomalies": anomalies[["timestamp_ms", "value"]].to_dict(orient="records")
+    }
