@@ -130,14 +130,20 @@ def get_anomalies(run_id: int, signal_name: str, threshold: float = 2.0):
     rows = cursor.fetchall()
     conn.close()
 
+    if not rows:
+        return {"error": f"No data found for signal '{signal_name}' in this run"}
+
     df = pd.DataFrame(rows, columns=["timestamp_ms", "value"])
     df = df.dropna(subset=["value"])
+
+    if df.empty:
+        return {"error": f"No numeric data found for signal '{signal_name}'"}
 
     mean = df["value"].mean()
     std = df["value"].std()
 
-    if std == 0:
-        return {"anomalies": []}
+    if pd.isna(std) or std == 0:
+        return {"anomalies": [], "note": "Not enough variation in this signal to detect anomalies"}
 
     df["z_score"] = (df["value"] - mean) / std
     anomalies = df[df["z_score"].abs() > threshold]
