@@ -7,7 +7,6 @@ import sqlite3
 from database import DB
 from fastapi import Query
 from typing import Optional
-import json
 
 app = FastAPI()
 
@@ -113,7 +112,6 @@ def get_signal_stats(run_id: int, signal_name: str):
 
     return {
         "signal_name": signal_name,
-        "unit": SIGNAL_UNITS.get(signal_name, ""),
         "count": len(series),
         "min": series.min(),
         "max": series.max(),
@@ -158,11 +156,3 @@ def get_anomalies(run_id: int, signal_name: str, threshold: float = 2.0):
         "anomaly_count": len(anomalies),
         "anomalies": anomalies[["timestamp_ms", "value"]].to_dict(orient="records")
     }
-
-with open("structure.json") as f:
-    _structure = json.load(f)
-
-SIGNAL_UNITS = {}
-for message in _structure["messages"].values():
-    for signal in message["signals"]:
-        SIGNAL_UNITS[signal["name"]] = signal["unit"]
