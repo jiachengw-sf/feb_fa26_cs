@@ -58,7 +58,7 @@
 
 {#if stats}
   <div style="margin-top: 1rem;">
-    <p><strong>Stats:</strong> min {stats.min}, max {stats.max}, mean {stats.mean}, std {stats.std} ({stats.count} readings)</p>
+    <p><strong>Stats:</strong> min {stats.min}{stats.unit}, max {stats.max}{stats.unit}, mean {stats.mean}{stats.unit}, std {stats.std}{stats.unit} ({stats.count} readings)</p>
     <p><strong>Anomalies detected:</strong> {anomalyCount} points beyond 2 standard deviations from the mean</p>
   </div>
 {/if}
